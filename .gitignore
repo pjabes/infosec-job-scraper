@@ -1,5 +1,5 @@
 # Logs
-app.log
+*.log
 
 # VSCode 
 .vscode/
