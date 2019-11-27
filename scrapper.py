@@ -44,10 +44,16 @@ def getJobLinks(page):
     return jobLinks
 
 def getJobInformation(url):
-    print('getJobInformation - STARTED')
+    logger.debug('getJobInformation() called for url=%s', url)
 
+    logger.debug('attempting to download %s', url)
     source = requests.get(url).text
     soup = BeautifulSoup(source, 'html.parser')
+    if soup:
+        logger.debug('successfully downloaded %s', page)
+    else:
+        logger.info('unsuccessful attempt at downloading %s', page)
+        exit()
 
 
 
