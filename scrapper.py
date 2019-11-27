@@ -1,20 +1,47 @@
 import requests
 from bs4 import BeautifulSoup
+import logging
+import logging.config
+import yaml
 
-print('BeautifulSoup4 Imported')
+
+# Setups
+
+with open('./conf/logs.yaml', 'r') as f:
+    config = yaml.safe_load(f.read())
+    logging.config.dictConfig(config)
+
+logger = logging.getLogger(__name__)
+logger.debug('script started')
+logger.debug('logging started')
 
 def getJobLinks(page):
-    print('getJobLinks - STARTED')
+
+    baseURL = "https://au.indeed.com"
+    logger.debug('getJobLinks() called page=%s, baseURL=%s', page, baseURL)
+    logger.debug('attempting to download source for %s', page)
     source = requests.get(page).text
     soup = BeautifulSoup(source, 'html.parser')
 
-    links = soup.find_all('a', attrs={'class': 'jobtitle'})
+    if soup:
+        logger.debug('successfully downloaded %s', page)
+    else:
+        logger.info('unsuccessful attempt at downloading %s', page)
+        exit()
 
+    jobLinks = soup.find_all('a', attrs={'class': 'jobtitle'})
 
-    for link in links:
+    if jobLinks:
+        for link in jobLinks:
+            cleanString = str(baseURL) + link['href']
+            cleanString = cleanString.strip('&jvs=3')
+            logger.info('found job: %s', cleanString)
+    else:
+        logger.info('unable to extract jobs')
+    
+    # TODO:  Save these jobLink results
 
-        baseURL = "https://au.indeed.com"
-        print(str(baseURL) + str(link['href'])) 
+    return jobLinks
 
 def getJobInformation(url):
     print('getJobInformation - STARTED')
@@ -34,6 +61,6 @@ def getJobInformation(url):
     print(jobDescription)
 
 
-getJobInformation('https://au.indeed.com/rc/clk?jk=4d0142c2704ceffb&fccid=dd09fe3b43125016&vjs=3')
+# getJobInformation('https://au.indeed.com/rc/clk?jk=4d0142c2704ceffb&fccid=dd09fe3b43125016&vjs=3')
 
-# getJobLinks("https://au.indeed.com/jobs?q=Cyber+Security+&l=Melbourne+VIC")
+getJobLinks("https://au.indeed.com/jobs?q=Cyber+Security+&l=Melbourne+VIC")
