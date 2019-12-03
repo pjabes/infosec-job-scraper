@@ -3,9 +3,10 @@ from bs4 import BeautifulSoup
 import logging
 import logging.config
 import yaml
+import pandas as pd
+import numpy as np
 
 
-# Setups
 
 with open('./conf/logs.yaml', 'r') as f:
     config = yaml.safe_load(f.read())
@@ -50,23 +51,36 @@ def getJobInformation(url):
     source = requests.get(url).text
     soup = BeautifulSoup(source, 'html.parser')
     if soup:
-        logger.debug('successfully downloaded %s', page)
+        logger.debug('successfully downloaded %s', url)
     else:
-        logger.info('unsuccessful attempt at downloading %s', page)
+        logger.info('unsuccessful attempt at downloading %s', url)
         exit()
 
 
+    # Dictionary Construction
 
     jobTitle = soup.find('h3', attrs={'class': 'jobsearch-JobInfoHeader-title'}).text
+    jobCompanyName = soup.find('a', attrs={'class': 'jobsearch-CompanyAvatar-companyLink'}).text
     jobLocation = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'}).text
-    jobDescription = soup.find('div', attrs={'class': 'jobsearch-jobDescriptionText'}).text
 
 
-    print(jobTitle)
-    print(jobLocation)
-    print(jobDescription)
+    # dict = {
+    #     'jobTitle': jobTitle,
+    #     'jobCompanyName': jobCompanyName,
+    #     'jobLocation': jobLocation,
+    #     'jobPeriod': jobPeriod,
+    #     'jobSalary': jobSalary,
+    #     'jobDescription': jobDescription,
+    #     'jobPostDate': jobPostDate
+    # }
 
 
-# getJobInformation('https://au.indeed.com/rc/clk?jk=4d0142c2704ceffb&fccid=dd09fe3b43125016&vjs=3')
 
-getJobLinks("https://au.indeed.com/jobs?q=Cyber+Security+&l=Melbourne+VIC")
+    # jobDescription = soup.find('div', attrs={'class': 'jobsearch-jobDescriptionText'}).text
+
+
+
+
+getJobInformation('https://au.indeed.com/rc/clk?jk=4d0142c2704ceffb&fccid=dd09fe3b43125016&vjs=3')
+
+# getJobLinks("https://au.indeed.com/jobs?q=Cyber+Security+&l=Melbourne+VIC")
