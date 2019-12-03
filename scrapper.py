@@ -57,29 +57,70 @@ def getJobInformation(url):
         exit()
 
 
-    # Dictionary Construction
+    # TODO:  Terrible code - this desperately needs optimisation...
+    jobTitle = soup.find('h3', attrs={'class': 'jobsearch-JobInfoHeader-title'})
+    
+    if jobTitle:
+        jobTitle = jobTitle.text
+    else:
+        jobTitle = '-'
 
-    jobTitle = soup.find('h3', attrs={'class': 'jobsearch-JobInfoHeader-title'}).text
-    jobCompanyName = soup.find('a', attrs={'class': 'jobsearch-CompanyAvatar-companyLink'}).text
-    jobLocation = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'}).text
+    jobCompanyName = soup.find('a', attrs={'class': 'jobsearch-CompanyAvatar-companyLink'})
+
+    if jobCompanyName:
+        jobCompanyName = jobCompanyName.text
+    else:
+        jobCompanyName = '-'
+
+    jobLocation = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+
+    if jobLocation:
+        jobLocation = jobLocation.text
+    else:
+        jobLocation = '-'
+
+    jobPeriod = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+
+    if jobPeriod:
+        jobPeriod = jobPeriod.text
+    else:
+        jobPeriod = '-'
 
 
-    # dict = {
-    #     'jobTitle': jobTitle,
-    #     'jobCompanyName': jobCompanyName,
-    #     'jobLocation': jobLocation,
-    #     'jobPeriod': jobPeriod,
-    #     'jobSalary': jobSalary,
-    #     'jobDescription': jobDescription,
-    #     'jobPostDate': jobPostDate
-    # }
+    jobPostDate = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+
+    if jobPostDate:
+        jobPostDate = jobPostDate.text
+    else:
+        jobPostDate = '-'
+
+    jobSalary = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+
+    if jobSalary:
+        jobSalary = jobSalary.text
+    else:
+        jobSalary = '-'
+
+    jobDescription = soup.find('div', attrs={'class': 'jobsearch-jobDescriptionText'})
+
+    if jobDescription:
+        jobDescription = jobDescription.text 
+    else:
+        jobDescription = '-'    
 
 
+    DataDict = {
+        'jobTitle': jobTitle,
+        'jobCompanyName': jobCompanyName,
+        'jobLocation': jobLocation,
+        'jobPeriod': jobPeriod,
+        'jobSalary': jobSalary,
+        'jobDescription': jobDescription,
+        'jobPostDate': jobPostDate
+    }
 
-    # jobDescription = soup.find('div', attrs={'class': 'jobsearch-jobDescriptionText'}).text
-
-
-
+    df = pd.DataFrame(DataDict, index=[0])
+    return df 
 
 getJobInformation('https://au.indeed.com/rc/clk?jk=4d0142c2704ceffb&fccid=dd09fe3b43125016&vjs=3')
 
