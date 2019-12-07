@@ -6,8 +6,6 @@ import yaml
 import pandas as pd
 import numpy as np
 
-
-
 with open('./conf/logs.yaml', 'r') as f:
     config = yaml.safe_load(f.read())
     logging.config.dictConfig(config)
@@ -72,29 +70,27 @@ def getJobInformation(url):
     else:
         jobCompanyName = '-'
 
-    jobLocation = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+    jobLocation = soup.find('div', attrs={'class': 'icl-IconFunctional--location'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
 
     if jobLocation:
         jobLocation = jobLocation.text
     else:
         jobLocation = '-'
 
-    jobPeriod = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+    jobPeriod = soup.find('div', attrs={'class': 'icl-IconFunctional--jobs'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
 
     if jobPeriod:
         jobPeriod = jobPeriod.text
     else:
         jobPeriod = '-'
 
-
-    jobPostDate = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
-
+    jobPostDate = None
     if jobPostDate:
         jobPostDate = jobPostDate.text
     else:
         jobPostDate = '-'
 
-    jobSalary = soup.find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+    jobSalary = soup.find('div', attrs={'class': 'icl-IconFunctional--salary'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
 
     if jobSalary:
         jobSalary = jobSalary.text
@@ -108,20 +104,30 @@ def getJobInformation(url):
     else:
         jobDescription = '-'    
 
+    jobExternalLink = soup.find('a', text="original job")
+    if jobExternalLink:
+        jobExternalLink = jobExternalLink['href']
+    else:
+        jobExternalLink = '-'
+
+    jobHash = hash(jobTitle + jobCompanyName)
 
     DataDict = {
+        'jobID': jobHash,
         'jobTitle': jobTitle,
         'jobCompanyName': jobCompanyName,
         'jobLocation': jobLocation,
         'jobPeriod': jobPeriod,
         'jobSalary': jobSalary,
         'jobDescription': jobDescription,
-        'jobPostDate': jobPostDate
+        'jobPostDate': jobPostDate,
+        'jobExternalLink': jobExternalLink
     }
-
+    
     df = pd.DataFrame(DataDict, index=[0])
+    print(df)
     return df 
 
-getJobInformation('https://au.indeed.com/rc/clk?jk=4d0142c2704ceffb&fccid=dd09fe3b43125016&vjs=3')
+getJobInformation('https://au.indeed.com/viewjob?jk=85c0dd31f4ecfc3f&tk=1drg2bi7884si800')
 
 # getJobLinks("https://au.indeed.com/jobs?q=Cyber+Security+&l=Melbourne+VIC")
