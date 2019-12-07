@@ -1,3 +1,7 @@
+# Jobs
+jobs/
+jobs/*
+
 # Logs
 *.log
 
