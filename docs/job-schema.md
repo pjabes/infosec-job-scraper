@@ -12,6 +12,7 @@ Job advertisements on Indeed typically present a subset of the total information
 | jobSalary       | $25 - $35 an hour      | string        | Can be expressed as yearly wage | 
 | jobDescription  | Google is...           | string        |           |
 | jobPostDate     | UTC    | Datetime      | datetime      |           |
+| jobExternalLink | https://au.indeed.com/f| string        |           |
 
 ## Calculated Fields 
 
