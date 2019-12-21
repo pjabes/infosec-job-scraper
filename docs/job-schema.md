@@ -5,6 +5,7 @@ Job advertisements on Indeed typically present a subset of the total information
 
 | data_item       | Example                | data_type     | Notes     |
 | -------------   | -------------          | ------------- |           |
+| jobID           | 314e09e3845f5f5f       | string        | Extracted from URL  |
 | jobTitle        | Security Engineer      | string        |           |
 | jobCompanyName  | Google                 | string        |           |
 | jobLocation     | Melbourne, Sydney      | list[string]  |           |
@@ -13,6 +14,8 @@ Job advertisements on Indeed typically present a subset of the total information
 | jobDescription  | Google is...           | string        |           |
 | jobPostDate     | UTC    | Datetime      | datetime      |           |
 | jobExternalLink | https://au.indeed.com/f| string        |           |
+
+Note - if a value cannot be extracted from a job advertisement, we impose that as "-".
 
 ## Calculated Fields 
 
