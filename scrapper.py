@@ -5,6 +5,8 @@ import logging.config
 import yaml
 import pandas as pd
 import numpy as np
+import urllib.parse
+import re
 
 with open('./conf/logs.yaml', 'r') as f:
     config = yaml.safe_load(f.read())
@@ -56,42 +58,52 @@ def getJobInformation(url):
 
 
     # TODO:  Terrible code - this desperately needs optimisation...
+
+    jobID = urllib.parse.parse_qs(url)['jk']
     jobTitle = soup.find('h3', attrs={'class': 'jobsearch-JobInfoHeader-title'})
+    
+
     
     if jobTitle:
         jobTitle = jobTitle.text
     else:
         jobTitle = '-'
 
-    jobCompanyName = soup.find('a', attrs={'class': 'jobsearch-CompanyAvatar-companyLink'})
+    jobCompanyName = soup.find('div', attrs={'class': 'jobsearch-InlineCompanyRating'}).find('div', attrs={'class': 'icl-u-lg-mr--sm icl-u-xs-mr--xs'})
 
     if jobCompanyName:
         jobCompanyName = jobCompanyName.text
     else:
         jobCompanyName = '-'
-
-    jobLocation = soup.find('div', attrs={'class': 'icl-IconFunctional--location'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
-
+    try:
+        jobLocation = soup.find('div', attrs={'class': 'icl-IconFunctional--location'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+    except:
+        jobLocation = False
     if jobLocation:
         jobLocation = jobLocation.text
     else:
         jobLocation = '-'
-
-    jobPeriod = soup.find('div', attrs={'class': 'icl-IconFunctional--jobs'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
-
+    try:
+        jobPeriod = soup.find('div', attrs={'class': 'icl-IconFunctional--jobs'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+    except:
+        jobPeriod = False
     if jobPeriod:
         jobPeriod = jobPeriod.text
     else:
         jobPeriod = '-'
 
-    jobPostDate = None
+    jobPostDate = soup.find('div', attrs={'class': 'jobsearch-JobMetadataFooter'})
+
     if jobPostDate:
-        jobPostDate = jobPostDate.text
+        jobPostDate = re.findall(r'[0-9]*', jobPostDate.text)
+        
+        print(jobPostDate)
     else:
         jobPostDate = '-'
-
-    jobSalary = soup.find('div', attrs={'class': 'icl-IconFunctional--salary'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
-
+    try:
+        jobSalary = soup.find('div', attrs={'class': 'icl-IconFunctional--salary'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
+    except:
+        jobSalary = False
     if jobSalary:
         jobSalary = jobSalary.text
     else:
@@ -113,7 +125,7 @@ def getJobInformation(url):
     jobHash = hash(jobTitle + jobCompanyName)
 
     DataDict = {
-        'jobID': jobHash,
+        'jobID': jobID,
         'jobTitle': jobTitle,
         'jobCompanyName': jobCompanyName,
         'jobLocation': jobLocation,
@@ -128,6 +140,6 @@ def getJobInformation(url):
     print(df)
     return df 
 
-getJobInformation('https://au.indeed.com/viewjob?jk=85c0dd31f4ecfc3f&tk=1drg2bi7884si800')
+getJobInformation('https://au.indeed.com/viewjob?cmp=JSB-Security&t=Security+Officer&jk=314e09e3845f5f5f&sjdu=8EWtruxy728tzxKcUmN0cSZVzcxIQSQJRLjqibOOMsTn30d0H9nOP49Hqk2_X4fn2ddok_-sIGEq2-Xe_CA93A&tk=1dsjti08r82gi801&adid=323207836&pub=4a1b367933fd867b19b072952f68dceb&vjs=3')
 
 # getJobLinks("https://au.indeed.com/jobs?q=Cyber+Security+&l=Melbourne+VIC")
