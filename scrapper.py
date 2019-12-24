@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import urllib.parse
 import re
+from datetime import datetime, timedelta
 
 with open('./conf/logs.yaml', 'r') as f:
     config = yaml.safe_load(f.read())
@@ -61,7 +62,7 @@ def getJobInformation(url):
 
     jobID = urllib.parse.parse_qs(url)['jk']
     jobTitle = soup.find('h3', attrs={'class': 'jobsearch-JobInfoHeader-title'})
-    
+    metaScrapeDatetime = datetime.today()
 
     
     if jobTitle:
@@ -95,11 +96,13 @@ def getJobInformation(url):
     jobPostDate = soup.find('div', attrs={'class': 'jobsearch-JobMetadataFooter'})
 
     if jobPostDate:
-        jobPostDate = re.findall(r'[0-9]*', jobPostDate.text)
-        
-        print(jobPostDate)
-    else:
-        jobPostDate = '-'
+        # TODO:  Will need to capture this differently - what happens if the company contains numbers?
+        daysAgo = int(re.findall('[0-9][0-9]*', jobPostDate.text)[-1])
+        if daysAgo == 30:
+            jobPostDate = '-'
+        else:
+            jobPostDate = (datetime.today() - timedelta(days=daysAgo)).date()
+
     try:
         jobSalary = soup.find('div', attrs={'class': 'icl-IconFunctional--salary'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
     except:
@@ -134,6 +137,7 @@ def getJobInformation(url):
         'jobDescription': jobDescription,
         'jobPostDate': jobPostDate,
         'jobExternalLink': jobExternalLink
+        'metaScrapeDatetime': 
     }
     
     df = pd.DataFrame(DataDict, index=[0])
