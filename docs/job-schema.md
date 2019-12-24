@@ -12,7 +12,7 @@ Job advertisements on Indeed typically present a subset of the total information
 | jobPeriod       | Full-time, Part-time   | list[string]  |           |
 | jobSalary       | $25 - $35 an hour      | string        | Can be expressed as yearly wage | 
 | jobDescription  | Google is...           | string        |           |
-| jobPostDate     | UTC    | Datetime      | datetime      |           |
+| jobPostDate     | UTC    | Datetime      | datetime      | If > 30 days, defaults as "-"         |
 | jobExternalLink | https://au.indeed.com/f| string        |           |
 
 Note - if a value cannot be extracted from a job advertisement, we impose that as "-".
