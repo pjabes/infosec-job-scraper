@@ -14,6 +14,7 @@ Job advertisements on Indeed typically present a subset of the total information
 | jobDescription  | Google is...           | string        |           |
 | jobPostDate     | UTC    | Datetime      | datetime      | If > 30 days, defaults as "-"         |
 | jobExternalLink | https://au.indeed.com/f| string        |           |
+| jobPromoted     | True                   | boolean       | Only if the advertisement has a paid promotion on it |
 
 Note - if a value cannot be extracted from a job advertisement, we impose that as "-".
 
