@@ -20,16 +20,34 @@ logger.debug('logging started')
 
 
 def extractJobID(url):
-    """ Helper utility to extractJobID.  There do seem to be some occurences where URLs have a weird way of applying JOBID.  This function measures all of these. 
+    """ Helper utility to extract JobID's from the URL.
     
     
     """
-    pattern = re.compile('jk=(.*?)&')
+    
     try: 
-        return re.findall(pattern, url)[0]
+        pattern = re.compile('jk=(.*?)&')
+        return str(re.findall(pattern, url)[0])
     except:
         pattern = re.compile('jobs/.*-(.*?)\?')
-        return re.findall(pattern, url)[0]
+        return str(re.findall(pattern, url)[0])
+
+        logger.error('could not extract a jobid from url=%s', url)
+        exit()
+
+
+def extractNumberOfJobs(soup):
+    """ Helper utility to extract numberOfJobs from BS4 soup object.
+
+
+    """
+
+    numberOfJobs = soup.find('div', attrs={'id': 'searchCountPages'}).text
+    numberOfJobs = numberOfJobs.strip().split(' ')
+
+    # 3'd element always contains the actual number of jobs, sometimes formatted with commas.
+    return int(numberOfJobs[3].replace(',', ''))
+
 
 def getJobLinks(page):
 
@@ -42,20 +60,26 @@ def getJobLinks(page):
     if soup:
         logger.debug('successfully downloaded %s', page)
     else:
-        logger.info('unsuccessful attempt at downloading %s', page)
+        logger.error('unsuccessful attempt at downloading %s', page)
         exit()
 
-    numberOfJobs = soup.find('div', attrs={'id': 'searchCountPages'})
-    numberOfJobs = numberOfJobs.text
-    numberOfJobs = numberOfJobs.strip().split(' ')
-    numberOfJobs = int(numberOfJobs[3].replace(',', ''))
+    numberOfJobs = extractNumberOfJobs(soup)
+    if numberOfJobs:
+        logger.debug('located a total number of %s jobs', numberOfJobs)
+    else:
+        logger.error('unable to determine number of jobs')
+
+
     jobsPerPage = 0
     cleanJobs = []
 
-    while jobsPerPage < 10:
+    while jobsPerPage < numberOfJobs:
+
+        logger.debug('scraping job links for batch %s of %s', jobsPerPage, numberOfJobs)
 
         url = page + '&start=' + str(jobsPerPage)
-        logger.info('-- attempting to download for %s', url)
+
+        logger.debug('-- attempting to download for %s', url)
         source = requests.get(url).text
         soup = BeautifulSoup(source, 'html.parser')
 
@@ -67,28 +91,25 @@ def getJobLinks(page):
                 #TODO:  Handle Advertisements better
 
                 if '/pagead/' in link['href']:
-                    logger.info('-- found page advertisement, skipping for now')
+                    logger.info('-- found page advertisement, skipping these for now now')
                 else:
                     cleanString = str(baseURL) + link['href']
                     logger.info('-- found jobID=%s', extractJobID(cleanString))
                     cleanJobs.append(cleanString)
+                    getJobInformation(cleanString)
+
         else:
             logger.info('unable to extract jobs')
+
         logger.info('-- sleeping for 0.5s')
 
         time.sleep(0.5)
         jobLinks = []
         jobsPerPage += 10 
 
-
     logger.info('OPS:  Found %s jobs', len(cleanJobs))
 
-    # TODO:  Save these jobLink results
 
-    for job in cleanJobs:
-        getJobInformation(job)
-        logger.info('sleeping for 2')
-        time.sleep(2)
 
     return cleanJobs
 
