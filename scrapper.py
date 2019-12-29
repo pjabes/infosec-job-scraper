@@ -33,18 +33,37 @@ def getJobLinks(page):
         logger.info('unsuccessful attempt at downloading %s', page)
         exit()
 
-    jobLinks = soup.find_all('a', attrs={'class': 'jobtitle'})
+    numberOfJobs = soup.find('div', attrs={'id': 'searchCountPages'})
+    numberOfJobs = numberOfJobs.text.strip().split(' ')
+    numberOfJobs = int(numberOfJobs[3])
+    jobsPerPage = 0
     cleanJobs = []
 
-    if jobLinks:
-        for link in jobLinks:
-            cleanString = str(baseURL) + link['href']
-            cleanString = cleanString.strip('&jvs=3')
-            logger.info('found job: %s', cleanString)
-            cleanJobs.append(cleanString)
-    else:
-        logger.info('unable to extract jobs')
-    
+    while jobsPerPage < numberOfJobs:
+
+        url = 'https://au.indeed.com/jobs?q=Cyber+Security&l=Melbourne+VIC&start=' + str(jobsPerPage)
+        logger.info('-- attempting to download for %s', url)
+        source = requests.get(url).text
+        soup = BeautifulSoup(source, 'html.parser')
+
+        jobLinks = soup.find_all('a', attrs={'class': 'jobtitle'})
+        logger.info('-- found %s jobs on the page', len(jobLinks))
+
+        if jobLinks:
+            for link in jobLinks:
+                cleanString = str(baseURL) + link['href']
+                cleanString = cleanString.strip('&jvs=3')
+                logger.info('-- found job: %s', cleanString)
+                cleanJobs.append(cleanString)
+        else:
+            logger.info('unable to extract jobs')
+        logger.info('-- sleeping for 0.5s')
+
+        time.sleep(0.5)
+        jobLinks = []
+        jobsPerPage += 10 
+
+    print(len(cleanJobs))
     # TODO:  Save these jobLink results
 
     for job in cleanJobs:
