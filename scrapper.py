@@ -9,14 +9,14 @@ import urllib.parse
 import re
 from datetime import datetime, timedelta
 import time
+from random import randint
 
 with open('./conf/logs.yaml', 'r') as f:
     config = yaml.safe_load(f.read())
     logging.config.dictConfig(config)
 
 logger = logging.getLogger(__name__)
-logger.debug('script started')
-logger.debug('logging started')
+logger.debug('logging preferences successfully read in from ./conf/logs.yaml')
 
 
 def extractJobID(url):
@@ -45,63 +45,83 @@ def extractNumberOfJobs(soup):
     numberOfJobs = soup.find('div', attrs={'id': 'searchCountPages'}).text
     numberOfJobs = numberOfJobs.strip().split(' ')
 
+
     # 3'd element always contains the actual number of jobs, sometimes formatted with commas.
     return int(numberOfJobs[3].replace(',', ''))
+
+def downloadPage(url):
+    """ Helper utility to download a URL using the expected information.
+
+        Returns:
+            BeautifulSoup4 Object
+    """
+    logger.debug('downloadPage(): attempting to download %s', url)
+
+    try:
+        source = requests.get(url).text
+        soup = BeautifulSoup(source, 'html.parser')
+        logger.debug('downloadPage(): successfully downloaded page')
+        return soup
+    except:
+        logger.error('downloadPage(): unable to download %s', url)
+        return None
+
 
 
 def getJobLinks(page):
 
     baseURL = "https://au.indeed.com"
-    logger.debug('getJobLinks() called page=%s, baseURL=%s', page, baseURL)
-    logger.debug('attempting to download source for %s', page)
-    source = requests.get(page).text
-    soup = BeautifulSoup(source, 'html.parser')
 
-    if soup:
-        logger.debug('successfully downloaded %s', page)
-    else:
-        logger.error('unsuccessful attempt at downloading %s', page)
-        exit()
+    logger.debug('getJobLinks(): called page=%s, baseURL=%s', page, baseURL)
+    logger.debug('getJobLinks(): attempting to download source=%s', page)
+
+    soup = downloadPage(page)
+    if not soup:
+        logger.info('getJobLinks(): unable to download the page')
+        return 
 
     numberOfJobs = extractNumberOfJobs(soup)
-    if numberOfJobs:
-        logger.debug('located a total number of %s jobs', numberOfJobs)
-    else:
-        logger.error('unable to determine number of jobs')
+    if not numberOfJobs:
+        logger.error('getJobLinks(): unable to determine number of jobs')
+        return 
 
+    logger.info('getJobLinks(): Found a total number of %s jobs', str(numberOfJobs))
 
-    jobsPerPage = 0
     cleanJobs = []
+    jobsPerPage = 0
 
     while jobsPerPage < numberOfJobs:
 
-        logger.debug('scraping job links for batch %s of %s', jobsPerPage, numberOfJobs)
+        logger.info('getJobLinks(): scraping job links for batch %s of %s', jobsPerPage, numberOfJobs)
 
         url = page + '&start=' + str(jobsPerPage)
 
-        logger.debug('-- attempting to download for %s', url)
-        source = requests.get(url).text
-        soup = BeautifulSoup(source, 'html.parser')
 
+        soup = downloadPage(url)
+
+        if not soup:
+            logger.info('getJobLinks(): getJobLinks(): unable to download %s', url)
+            return
+ 
         jobLinks = soup.find_all('a', attrs={'class': 'jobtitle'})
-        logger.info('-- found %s jobs on the page', len(jobLinks))
+        logger.info('getJobLinks(): found %s jobs on the page', len(jobLinks))
 
         if jobLinks:
             for link in jobLinks:
                 #TODO:  Handle Advertisements better
 
                 if '/pagead/' in link['href']:
-                    logger.info('-- found page advertisement, skipping these for now now')
+                    logger.info('getJobLinks(): found page advertisement, skipping these for now now')
                 else:
                     cleanString = str(baseURL) + link['href']
-                    logger.info('-- found jobID=%s', extractJobID(cleanString))
+                    logger.info('getJobLinks(): found jobID=%s', extractJobID(cleanString))
                     cleanJobs.append(cleanString)
                     getJobInformation(cleanString)
 
         else:
-            logger.info('unable to extract jobs')
+            logger.info('getJobLinks(): unable to extract jobs')
 
-        logger.info('-- sleeping for 0.5s')
+        logger.info('getJobLinks(): sleeping for 0.5s')
 
         time.sleep(0.5)
         jobLinks = []
@@ -118,25 +138,23 @@ def getJobInformation(url):
     if "/pagead/" in url:
         pass
     else:
-        logger.debug('getJobInformation() called for url=%s', url)
+        logger.debug('getJobInformation(): called for url=%s', url)
 
         jobID = extractJobID(url)
 
         if str(jobID) in jobIDDict:
-            logger.info('Already found this before - SKIPPING %s', jobID)
+            logger.info('getJobInformation(): jobID %s matches previously seen before jobID', jobID)
             return 
         else:
-            logger.info('%s is a new job according to hashmap', jobID)
-            url = 'https://au.indeed.com/viewjob?jk=' + str(jobID)
-            logger.debug('attempting to download %s', url)
-            source = requests.get(url).text
-            soup = BeautifulSoup(source, 'html.parser')
-            if soup:
-                logger.debug('successfully downloaded %s', url)
-            else:
-                logger.info('unsuccessful attempt at downloading %s', url)
-                exit()
+            logger.info('getJobInformation(): jobID %s is a new job.', jobID)
 
+
+            url = 'https://au.indeed.com/viewjob?jk=' + str(jobID)
+            soup = downloadPage(url)
+
+            if not soup:
+                logger.info('getJobInformation(): unable to download %s', str(url))
+                return
 
             # TODO:  Terrible code - this desperately needs optimisation...
 
@@ -204,13 +222,16 @@ def getJobInformation(url):
             jobExternalLink = soup.find('a', text="original job")
             if jobExternalLink:
                 jobExternalLink = jobExternalLink['href']
-                jobExternalLink = requests.get(jobExternalLink, allow_redirects=True)
-                jobExternalLink = jobExternalLink.url
+                try:
+                    jobExternalLink = requests.get(jobExternalLink, allow_redirects=True)
+                    jobExternalLink = jobExternalLink.url
+                except:
+                    jobExternalLink = '-'
 
             else:
                 jobExternalLink = '-'
 
-            logger.debug('created data dictionary with these values,')
+            logger.debug('getJobInformation(): created data dictionary with these values,')
             DataDict = {
                 'jobID': jobID,
                 'jobTitle': jobTitle,
@@ -222,24 +243,25 @@ def getJobInformation(url):
                 'jobPostDate': jobPostDate,
                 'jobExternalLink': jobExternalLink,
                 'metaScrapeDatetime': metaScrapeDatetime,
-                'metaScrapeURL': '-' #TODO:  Capture what the scrape URL and parameters were
+                'metaScrapeURL': url #TODO:  Capture what the scrape URL and parameters were
             }
             
             df = pd.DataFrame(DataDict, index=[0])
             print(df)
             df.to_csv('jobs.csv', mode='a', header=False)
-            logger.debug('appended data to jobs.csv')
+            logger.debug('getJobInformation(): appended data to jobs.csv')
             return df 
 
 
 def driver():
-    logger.info('driver executed')
+    logger.info('driver(): application logic starting')
 
     # searchKeywords = ['cyber+security', 'information+security', 'cybersecurity', 'infosec', 'security', 'security+consultant', 'security+engineer', 'risk+management', 'grc']
 
     searchKeywords = ['security+engineer']
 
-    logger.info('preparing the dictionary hashmap')
+    logger.info('driver(): populating jobID hashmap')
+
     # Preparing dictionary for hashmap
     jobs_df = pd.read_csv('./jobs.csv', names=['index', 'jobID', 'jobTitle', 'jobCompanyName', 'jobLocation', 'jobPeriod', 'jobSalary', 'jobDescription', 'jobPostDate', 'jobExternalLink', 'metaScrapeDatetime'])
     global jobIDDict
@@ -249,12 +271,12 @@ def driver():
     for jobID in jobIDS:
         jobIDDict[jobID] = 1
 
+    logger.info('driver(): jobID hashmap created')
 
-    logger.info('successfully finished the dictionary hashmap')
     for keyword in searchKeywords:
-        logger.info('attempting to get jobLinks for keyword=%s', keyword)
+        logger.info('driver(): attempting to get jobLinks for keyword=%s', keyword)
         getJobLinks("https://au.indeed.com/jobs?q=" + str(keyword))
-        logger.info('sleeping for 10s')
+        logger.info('driver(): sleeping for 10s')
         time.sleep(10)
 
 driver()
