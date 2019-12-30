@@ -197,11 +197,14 @@ def getJobInformation(url):
 
             if jobPostDate:
                 # TODO:  Will need to capture this differently - what happens if the company contains numbers?
-                daysAgo = int(re.findall('[0-9][0-9]*', jobPostDate.text)[-1])
-                if daysAgo == 30:
+                try:
+                    daysAgo = int(re.findall('[0-9][0-9]*', jobPostDate.text)[-1])
+                    if daysAgo == 30:
+                        jobPostDate = '-'
+                    else:
+                        jobPostDate = (datetime.today() - timedelta(days=daysAgo)).date()
+                except:
                     jobPostDate = '-'
-                else:
-                    jobPostDate = (datetime.today() - timedelta(days=daysAgo)).date()
 
             try:
                 jobSalary = soup.find('div', attrs={'class': 'icl-IconFunctional--salary'}).find_parent().find('span', attrs={'class': 'jobsearch-JobMetadataHeader-iconLabel'})
@@ -247,27 +250,27 @@ def getJobInformation(url):
             }
             
             df = pd.DataFrame(DataDict, index=[0])
-            print(df)
-            df.to_csv('jobs.csv', mode='a', header=False)
-            logger.debug('getJobInformation(): appended data to jobs.csv')
+            logger.info('getJobInformation(): jobID=%s, jobTitle=%s, jobCompany=%s...', jobID, jobTitle, jobCompanyName)
+            df.to_csv('jobs.csv', mode='a', header=False, index=False)
+            logger.debug('getJobInformation(): extracted job %s', jobID)
             return df 
 
 
 def driver():
     logger.info('driver(): application logic starting')
 
-    # searchKeywords = ['cyber+security', 'information+security', 'cybersecurity', 'infosec', 'security', 'security+consultant', 'security+engineer', 'risk+management', 'grc']
+    # searchKeywords = ['cyber+security', 'information+security', 'cybersecurity', 'infosec', 's5ecurity', 'security+consultant', 'security+engineer', 'risk+management', 'grc']
 
     searchKeywords = ['security+engineer']
 
     logger.info('driver(): populating jobID hashmap')
 
     # Preparing dictionary for hashmap
-    jobs_df = pd.read_csv('./jobs.csv', names=['index', 'jobID', 'jobTitle', 'jobCompanyName', 'jobLocation', 'jobPeriod', 'jobSalary', 'jobDescription', 'jobPostDate', 'jobExternalLink', 'metaScrapeDatetime'])
+    jobs_df = pd.read_csv('./jobs.csv', names=['jobID', 'jobTitle', 'jobCompanyName', 'jobLocation', 'jobPeriod', 'jobSalary', 'jobDescription', 'jobPostDate', 'jobExternalLink', 'metaScrapeDatetime', 'metaURL'])
     global jobIDDict
     jobIDDict = {}
-    jobIDS = jobs_df['jobID'].values.tolist()
     
+    jobIDS = jobs_df['jobID'].values.tolist()
     for jobID in jobIDS:
         jobIDDict[jobID] = 1
 
@@ -279,4 +282,4 @@ def driver():
         logger.info('driver(): sleeping for 10s')
         time.sleep(10)
 
-driver()
+driver()c
