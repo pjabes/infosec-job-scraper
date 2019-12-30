@@ -8,11 +8,19 @@ handlers:
     level: INFO
     formatter: simple
     stream: ext://sys.stdout
+  info_file_handler:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: simple
+      filename: ./scrapper-logs.log
+      maxBytes: 10485760 # 10MB
+      backupCount: 20
+      encoding: utf8
 loggers:
   sampleLogger:
     level: INFO
-    handlers: [console]
+    handlers: [console, info_file_handler]
     propagate: no
 root:
   level: INFO
-  handlers: [console]
+  handlers: [console, info_file_handler]

@@ -121,9 +121,11 @@ def getJobLinks(page):
         else:
             logger.info('getJobLinks(): unable to extract jobs')
 
-        logger.info('getJobLinks(): sleeping for 0.5s')
+        randomSleep = randint(1,20)
+        logger.info('getJobLinks(): sleeping for %s', str(randomSleep))
+        time.sleep(randomSleep)
 
-        time.sleep(0.5)
+
         jobLinks = []
         jobsPerPage += 10 
 
@@ -246,7 +248,7 @@ def getJobInformation(url):
                 'jobPostDate': jobPostDate,
                 'jobExternalLink': jobExternalLink,
                 'metaScrapeDatetime': metaScrapeDatetime,
-                'metaScrapeURL': url #TODO:  Capture what the scrape URL and parameters were
+                'metaScrapeURL': url 
             }
             
             df = pd.DataFrame(DataDict, index=[0])
@@ -259,9 +261,7 @@ def getJobInformation(url):
 def driver():
     logger.info('driver(): application logic starting')
 
-    # searchKeywords = ['cyber+security', 'information+security', 'cybersecurity', 'infosec', 's5ecurity', 'security+consultant', 'security+engineer', 'risk+management', 'grc']
-
-    searchKeywords = ['security+engineer']
+    searchKeywords = ['cyber+security', 'information+security', 'cybersecurity', 'infosec', 'security', 'security+consultant', 'security+engineer', 'risk+management', 'grc']
 
     logger.info('driver(): populating jobID hashmap')
 
@@ -279,7 +279,7 @@ def driver():
     for keyword in searchKeywords:
         logger.info('driver(): attempting to get jobLinks for keyword=%s', keyword)
         getJobLinks("https://au.indeed.com/jobs?q=" + str(keyword))
-        logger.info('driver(): sleeping for 10s')
-        time.sleep(10)
+        logger.info('driver(): sleeping for a random number of time between 100 and 150')
+        time.sleep(randint(100,150))
 
-driver()c
+driver()
